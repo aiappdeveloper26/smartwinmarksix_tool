@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智勝六合彩 工作流程助手</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', sans-serif;
+    background: #0a1628;
+    min-height: 100vh;
+    padding: 1.5rem 1rem 3rem;
+  }
+  .wrapper { max-width: 720px; margin: 0 auto; }
+
+  .header { text-align: center; margin-bottom: 1.5rem; }
+  .header h1 { font-size: 22px; font-weight: 800; color: #f5c842; }
+  .header p { font-size: 12px; color: #4a7aaa; margin-top: 4px; }
+
+  .card {
+    background: #0e2040; border: 1px solid #1e3a5f;
+    border-radius: 16px; padding: 1.1rem 1.2rem; margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 700; color: #aad4ff;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .card-title .badge {
+    font-size: 11px; font-weight: 600; color: #4a7aaa;
+    background: #0a1628; padding: 2px 8px; border-radius: 10px; margin-left: auto;
+  }
+
+  input, select, textarea, button {
+    font-family: inherit; font-size: 13px;
+    border-radius: 8px; border: 1px solid #1e3a5f;
+    background: #0a1628; color: #aad4ff;
+  }
+  input, select { padding: 8px 10px; }
+  input[type=number] { width: 62px; text-align: center; }
+  input[type=date] { width: 140px; }
+  textarea { width: 100%; padding: 10px; resize: vertical; font-family: 'SF Mono', monospace; line-height: 1.5; }
+
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+
+  button {
+    cursor: pointer; padding: 9px 16px; font-weight: 700;
+    transition: background 0.15s, transform 0.1s;
+  }
+  button:active { transform: scale(0.96); }
+  button:hover { background: #122a4f; }
+  .btn-main { background: linear-gradient(135deg,#f5c842,#e6a800); color:#1a0e00; border:none; }
+  .btn-main:hover { background: linear-gradient(135deg,#ffd966,#f5c842); }
+  .btn-copy { padding: 8px 10px; }
+  .btn-small { padding: 6px 10px; font-size: 12px; }
+  .btn-danger { color: #ff8080; border-color: #5a2424; }
+
+  .err { font-size: 12px; color: #ff8080; margin-top: 6px; }
+  .ok  { font-size: 12px; color: #8de08d; margin-top: 6px; }
+
+  .balls-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff; position: relative;
+  }
+  .chip-wrap { text-align: center; }
+  .chip-cnt { font-size: 9px; color: #7a9cc4; margin-top: 2px; }
+
+  .stats-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stats-box { background: #0a1628; border-radius: 10px; padding: 10px 12px; }
+  .stats-label { font-size: 11px; color: #7a9cc4; margin-bottom: 8px; }
+
+  .copy-row { display: flex; gap: 8px; align-items: flex-start; }
+  .copy-row textarea { flex: 1; }
+
+  .file-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .file-row input[type=file] { font-size: 12px; color: #7a9cc4; }
+
+  .history-table { width: 100%; font-size: 12px; border-collapse: collapse; color: #ffffff; }
+  .history-table th, .history-table td { padding: 5px 6px; text-align: left; border-bottom: 1px solid #1e3a5f; color: #ffffff; }
+  .history-table th { color: #4a7aaa; font-weight: 600; }
+  .history-scroll { max-height: 180px; overflow-y: auto; }
+  .history-scroll::-webkit-scrollbar { width: 4px; }
+  .history-scroll::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 4px; }
+
+  .count-pill { font-size: 11px; color: #f5c842; background: #2a1f0a; padding: 2px 8px; border-radius: 10px; }
+
+  .footer-note { font-size: 11px; color: #2a4a6a; text-align: center; margin-top: 1.5rem; line-height: 1.6; }
+
+  .ai-result {
+    background: #0a1628; border: 1px solid #1e3a5f;
+    border-radius: 10px; padding: 12px 14px; margin-top: 10px;
+  }
+  .ai-result-title {
+    font-size: 12px; font-weight: 700; color: #f5c842;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .ai-result-text {
+    font-size: 13px; color: #ffffff; line-height: 1.6; white-space: pre-wrap;
+  }
+  .btn-quick { background: #122a4f; border-color: #2a4a7a; color: #aad4ff; font-weight: 600; }
+  .btn-quick:hover { background: #1a3a6a; }
+  .btn-quick.copied { background: #1a5a2a; border-color: #2a7a3a; color: #b0ffb0; }
+
+  .checklist-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 4px; border-bottom: 1px solid #16294a;
+    cursor: pointer; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-item input[type=checkbox] {
+    width: 20px; height: 20px; accent-color: #f5c842;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .checklist-item label {
+    font-size: 13px; color: #ffffff; cursor: pointer; flex: 1;
+  }
+  .checklist-item.done label { color: #4a7aaa; text-decoration: line-through; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <h1>🎱 智勝六合彩 工作流程助手</h1>
+    <p>匯入更新後的CSV → 自動產生統計、AI提問、IG文案 · 數據可永久保存</p>
+  </div>
+
+  <!-- Checklist -->
+  <div class="card">
+    <div class="card-title">
+      <span>✅ 今日發文清單</span>
+      <span class="badge" id="checklist-badge">0/6</span>
+    </div>
+    <div id="checklist-items"></div>
+    <button class="btn-small" style="margin-top:8px;" onclick="resetChecklist()">🔄 重置清單（開始新一篇貼文）</button>
+  </div>
+
+  <!-- Data source status -->
+  <div class="card">
+    <div class="card-title">
+      <span>💾 數據儲存狀態</span>
+      <span class="badge" id="storage-badge">載入中…</span>
+    </div>
+    <div class="row">
+      <button onclick="exportCSV()">⬇️ 匯出 CSV（備份）</button>
+      <label class="file-row" style="margin:0;">
+        <button onclick="document.getElementById('csv-file-input').click()">⬆️ 匯入更新後的 CSV</button>
+        <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="importCSV(event)">
+      </label>
+      <button class="btn-danger" onclick="clearAllData()">🗑️ 清除所有數據</button>
+    </div>
+    <p id="storage-msg" class="ok" style="display:none;"></p>
+    <p style="font-size:12px;color:#7a9cc4;margin-top:10px;">
+      匯入CSV後，下方會自動使用CSV中最新一筆記錄產生所有素材。
+    </p>
+    <button class="btn-main" onclick="generateFromLatest()" style="margin-top:10px;">🎯 用最新記錄產生本期所有素材</button>
+    <p id="input-error" class="err" style="display:none;"></p>
+  </div>
+
+  <!-- Next draw info -->
+  <div class="card">
+    <div class="card-title">📅 下一期開獎資訊</div>
+    <div class="row">
+      <label style="font-size:12px;width:90px;">下一期期數：</label>
+      <input type="text" id="next-draw-no" placeholder="例如 26/050" style="flex:1;min-width:120px;">
+    </div>
+    <div class="row">
+      <label style="font-size:12px;width:90px;">攪珠日期：</label>
+      <input type="date" id="next-draw-date">
+    </div>
+    <div class="row">
+      <label style="font-size:12px;width:90px;">估計頭獎：</label>
+      <span style="font-size:13px;color:#7a9cc4;">HKD</span>
+      <input type="text" id="next-draw-prize" placeholder="例如 8,000,000" style="flex:1;min-width:120px;">
+    </div>
+    <p style="font-size:11px;color:#4a7aaa;margin-top:6px;">
+      填好以上資訊後，按「🎯 用最新記錄產生本期所有素材」即會自動帶入下方文案。
+    </p>
+  </div>
+
+  <div id="output" style="display:none;">
+
+    <div class="card">
+      <div class="card-title">📊 統計（最近 50 期）<span class="badge" id="record-count-badge"></span></div>
+      <div class="stats-2col">
+        <div class="stats-box">
+          <div class="stats-label">🔥 熱號 Top 6</div>
+          <div class="balls-grid" id="hot-balls"></div>
+        </div>
+        <div class="stats-box">
+          <div class="stats-label">❄️ 冷號 Bottom 6</div>
+          <div class="balls-grid" id="cold-balls"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🤖 步驟 3 · AI模型提問</div>
+
+      <div class="copy-row" style="margin-bottom:14px;">
+        <textarea id="ai-prompt" rows="9" readonly></textarea>
+        <button class="btn-copy" onclick="copyText('ai-prompt', this)">📋</button>
+      </div>
+
+      <div style="font-size:12px;color:#7a9cc4;margin-bottom:8px;">
+        👉 一鍵複製提問並開啟AI網站，開啟後直接貼上（Ctrl+V / Cmd+V）即可：
+      </div>
+      <div class="row">
+        <button class="btn-quick" onclick="copyAndOpen('ai-prompt', 'https://grok.com', this)">🚀 Grok</button>
+        <button class="btn-quick" onclick="copyAndOpen('ai-prompt', 'https://gemini.google.com', this)">🚀 Gemini</button>
+        <button class="btn-quick" onclick="copyAndOpen('ai-prompt', 'https://chat.deepseek.com', this)">🚀 DeepSeek</button>
+        <button class="btn-quick" onclick="copyAndOpen('ai-prompt', 'https://copilot.microsoft.com', this)">🚀 Copilot</button>
+      </div>
+      <button class="btn-small" style="margin-top:8px;" onclick="copyAndOpenAll()">📑 全部4個一次過開啟（已複製提問）</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 收集4個AI模型嘅預測結果</div>
+      <p style="font-size:11px;color:#4a7aaa;margin-bottom:10px;">
+        將每個AI回覆嘅預測號碼貼喺呢度（例如：3-9-15-22-31-45），下面圖片提問同IG文案會自動帶入。
+      </p>
+      <div class="row" style="margin-bottom:6px;">
+        <label style="font-size:12px;width:80px;">DeepSeek：</label>
+        <input type="text" id="pred-deepseek" placeholder="例如 3-9-15-22-31-45" style="flex:1;min-width:160px;">
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <label style="font-size:12px;width:80px;">Copilot：</label>
+        <input type="text" id="pred-copilot" placeholder="例如 3-9-15-22-31-45" style="flex:1;min-width:160px;">
+      </div>
+      <div class="row" style="margin-bottom:6px;">
+        <label style="font-size:12px;width:80px;">Grok：</label>
+        <input type="text" id="pred-grok" placeholder="例如 3-9-15-22-31-45" style="flex:1;min-width:160px;">
+      </div>
+      <div class="row" style="margin-bottom:0;">
+        <label style="font-size:12px;width:80px;">Gemini：</label>
+        <input type="text" id="pred-gemini" placeholder="例如 3-9-15-22-31-45" style="flex:1;min-width:160px;">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🖼️ 步驟 4 · Gemini 圖片模板提問</div>
+      <div class="copy-row">
+        <textarea id="gemini-prompt" rows="6" readonly></textarea>
+        <button class="btn-copy" onclick="copyText('gemini-prompt', this)">📋</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📱 步驟 5 · IG 文案</div>
+      <div class="copy-row">
+        <textarea id="ig-caption" rows="10" readonly></textarea>
+        <button class="btn-copy" onclick="copyText('ig-caption', this)">📋</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- History table -->
+  <div class="card">
+    <div class="card-title">📜 已儲存的歷史記錄<span class="badge" id="history-badge"></span></div>
+    <div class="row">
+      <button class="btn-small btn-danger" onclick="clearAllData()">🗑️ 清除所有記錄</button>
+    </div>
+    <div class="history-scroll">
+      <table class="history-table" id="history-table">
+        <thead><tr><th>日期</th><th>正碼</th><th>特別號</th><th></th></tr></thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    數據儲存於此 Artifact 的個人雲端儲存空間，重開此 Artifact 會自動載入。<br>
+    建議定期按「匯出 CSV」備份，避免意外遺失。
+  </div>
+
+</div>
+
+<script>
+
+// ── Storage helpers (works in Claude artifact AND GitHub Pages / any browser) ──
+async function storageGet(key) {
+  try {
+    if (window.storage) {
+      const r = await storageGet(key);
+      return r ? r.value : null;
+    }
+  } catch(e) {}
+  try { return localStorage.getItem(key); } catch(e) { return null; }
+}
+async function storageSet(key, value) {
+  try {
+    if (window.storage) {
+      await storageSet(key, value);
+      return;
+    }
+  } catch(e) {}
+  try { localStorage.setItem(key, value); } catch(e) {}
+}
+
+const BALL_COLOR = {
+   1:'red',  2:'red',  3:'blue', 4:'blue', 5:'green',6:'green',
+   7:'red',  8:'red',  9:'blue', 10:'blue',
+  11:'green',12:'red', 13:'red', 14:'blue',15:'blue', 16:'green',
+  17:'green',18:'red', 19:'red', 20:'blue',
+  21:'green',22:'green',23:'red', 24:'red', 25:'blue', 26:'blue',
+  27:'green',28:'green',29:'red', 30:'red',
+  31:'blue', 32:'green',33:'green',34:'red', 35:'red', 36:'blue',
+  37:'blue', 38:'green',39:'green',40:'red',
+  41:'blue', 42:'blue',43:'green',44:'green',45:'red', 46:'red',
+  47:'blue', 48:'blue', 49:'green'
+};
+const COLOR_ZH = { red:'紅', blue:'藍', green:'綠' };
+const COLOR_BG = { red:'#cc1c1c', blue:'#1455b8', green:'#1a8c28' };
+
+const SEED_DATA = `2024-01-02,3,9,15,22,31,45,7
+2024-01-06,1,12,19,28,33,47,4
+2024-01-09,5,14,23,30,38,42,11
+2024-01-13,2,8,17,25,36,49,20
+2024-01-16,6,10,21,29,34,43,16
+2024-01-20,4,13,18,27,39,46,9
+2024-01-23,7,11,24,32,40,48,3
+2024-01-27,1,15,22,31,37,44,19
+2024-01-30,8,16,26,33,41,49,5
+2024-02-03,2,9,20,28,35,45,12
+2024-02-06,6,14,23,30,38,47,1
+2024-02-10,3,11,17,25,36,43,22
+2024-02-13,5,13,21,29,40,48,7
+2024-02-17,4,10,19,27,34,46,15
+2024-02-20,9,16,24,32,39,44,2
+2024-02-24,1,12,18,26,33,42,37
+2024-02-27,7,15,22,31,38,49,6
+2024-03-02,3,9,20,28,35,45,14
+2024-03-05,5,11,23,30,40,47,8
+2024-03-09,2,13,17,25,36,43,21
+2024-03-12,6,10,19,27,34,46,4
+2024-03-16,4,14,24,32,39,48,16
+2024-03-19,1,12,21,29,38,44,9
+2024-03-23,8,15,22,31,37,49,3
+2024-03-26,3,11,18,26,33,42,20
+2024-03-30,7,9,20,28,35,45,13
+2024-04-02,5,13,23,30,40,47,2
+2024-04-06,2,10,17,25,36,43,22
+2024-04-09,6,14,19,27,34,46,11
+2024-04-13,4,12,24,32,39,48,7
+2024-04-16,1,15,21,29,38,44,5
+2024-04-20,9,11,22,31,37,49,18
+2024-04-23,3,13,18,26,33,42,6
+2024-04-27,7,10,20,28,35,45,4
+2024-04-30,5,14,23,30,40,47,16
+2024-05-04,2,9,17,25,36,43,8
+2024-05-07,6,12,19,27,34,46,21
+2024-05-11,4,15,24,32,39,48,1
+2024-05-14,1,11,21,29,38,44,14
+2024-05-18,8,13,22,31,37,49,3
+2024-05-21,3,10,18,26,33,42,20
+2024-05-25,7,14,20,28,35,45,9
+2024-05-28,5,12,23,30,40,47,2
+2024-06-01,2,15,17,25,36,43,11
+2024-06-04,6,9,19,27,34,46,22
+2024-06-08,4,13,24,32,39,48,5
+2024-06-11,1,10,21,29,38,44,7
+2024-06-15,9,14,22,31,37,49,16
+2024-06-18,3,12,18,26,33,42,4
+2024-06-22,7,11,20,28,35,45,13
+2024-06-25,5,15,23,30,40,47,6
+2024-06-29,2,9,17,25,36,43,21`;
+
+const STORAGE_KEY = 'marksix_history_v1';
+const CHECKLIST_KEY = 'marksix_checklist_v1';
+const NEXT_DRAW_KEY = 'marksix_next_draw_v1';
+const PREDICTIONS_KEY = 'marksix_predictions_v1';
+
+async function loadPredictions() {
+  try {
+    const result = await storageGet(PREDICTIONS_KEY);
+    if (result && result.value) {
+      const p = JSON.parse(result.value);
+      document.getElementById('pred-deepseek').value = p.deepseek || '';
+      document.getElementById('pred-copilot').value  = p.copilot  || '';
+      document.getElementById('pred-grok').value      = p.grok     || '';
+      document.getElementById('pred-gemini').value    = p.gemini   || '';
+    }
+  } catch (e) { /* no saved predictions yet, ignore */ }
+}
+
+async function savePredictions() {
+  const p = {
+    deepseek: document.getElementById('pred-deepseek').value.trim(),
+    copilot:  document.getElementById('pred-copilot').value.trim(),
+    grok:     document.getElementById('pred-grok').value.trim(),
+    gemini:   document.getElementById('pred-gemini').value.trim()
+  };
+  try {
+    await storageSet(PREDICTIONS_KEY, JSON.stringify(p));
+  } catch (e) { /* non-critical */ }
+  if (p.deepseek && p.copilot && p.grok && p.gemini) autoCheckItem('ai');
+}
+
+async function clearPredictions() {
+  ['pred-deepseek','pred-copilot','pred-grok','pred-gemini'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  await savePredictions();
+}
+
+async function loadNextDrawInfo() {
+  try {
+    const result = await storageGet(NEXT_DRAW_KEY);
+    if (result && result.value) {
+      const info = JSON.parse(result.value);
+      document.getElementById('next-draw-no').value = info.no || '';
+      document.getElementById('next-draw-date').value = info.date || '';
+      document.getElementById('next-draw-prize').value = info.prize || '';
+    }
+  } catch (e) { /* no saved info yet, ignore */ }
+}
+
+async function saveNextDrawInfo() {
+  const info = {
+    no: document.getElementById('next-draw-no').value.trim(),
+    date: document.getElementById('next-draw-date').value,
+    prize: document.getElementById('next-draw-prize').value.trim()
+  };
+  try {
+    await storageSet(NEXT_DRAW_KEY, JSON.stringify(info));
+  } catch (e) { /* non-critical */ }
+}
+
+const CHECKLIST_DEFS = [
+  { id: 'csv',     label: '已更新並匯入最新CSV' },
+  { id: 'stats',   label: '已產生熱號／冷號統計' },
+  { id: 'ai',      label: '已收集4個AI模型的預測結果' },
+  { id: 'image',   label: '已用Gemini產生並下載最新圖片' },
+  { id: 'caption', label: '已複製IG文案' },
+  { id: 'posted',  label: '已上傳到Instagram' },
+];
+
+let checklistState = {};
+
+async function loadChecklist() {
+  try {
+    const result = await storageGet(CHECKLIST_KEY);
+    checklistState = result && result.value ? JSON.parse(result.value) : {};
+  } catch (e) {
+    checklistState = {};
+  }
+  renderChecklist();
+}
+
+async function saveChecklist() {
+  try {
+    await storageSet(CHECKLIST_KEY, JSON.stringify(checklistState));
+  } catch (e) { /* non-critical, ignore */ }
+}
+
+function renderChecklist() {
+  const container = document.getElementById('checklist-items');
+  container.innerHTML = '';
+  CHECKLIST_DEFS.forEach(item => {
+    const checked = !!checklistState[item.id];
+    const div = document.createElement('div');
+    div.className = 'checklist-item' + (checked ? ' done' : '');
+    div.innerHTML = `
+      <input type="checkbox" id="chk-${item.id}" ${checked ? 'checked' : ''}>
+      <label for="chk-${item.id}">${item.label}</label>
+    `;
+    div.querySelector('input').addEventListener('change', (e) => toggleChecklistItem(item.id, e.target.checked));
+    container.appendChild(div);
+  });
+  updateChecklistBadge();
+}
+
+function toggleChecklistItem(id, checked) {
+  checklistState[id] = checked;
+  saveChecklist();
+  renderChecklist();
+}
+
+function autoCheckItem(id) {
+  if (checklistState[id]) return; // already checked, no-op
+  checklistState[id] = true;
+  saveChecklist();
+  renderChecklist();
+}
+
+function updateChecklistBadge() {
+  const total = CHECKLIST_DEFS.length;
+  const done = CHECKLIST_DEFS.filter(i => checklistState[i.id]).length;
+  document.getElementById('checklist-badge').textContent = `${done}/${total}`;
+}
+
+async function resetChecklist() {
+  if (!confirm('確定要重置清單嗎？（適合開始準備下一篇貼文時使用，會同時清空已輸入嘅AI預測）')) return;
+  checklistState = {};
+  await saveChecklist();
+  renderChecklist();
+  await clearPredictions();
+}
+let records = []; // [{date, main:[6], extra}], sorted newest first
+
+function normalizeDate(d) {
+  d = String(d).trim();
+
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+
+  // Excel serial date number (e.g. 46187) — days since 1899-12-30
+  if (/^\d{4,6}$/.test(d)) {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const ms = parseInt(d) * 24 * 60 * 60 * 1000;
+    const dt = new Date(excelEpoch.getTime() + ms);
+    return dt.toISOString().slice(0,10);
+  }
+
+  // Slash format: assume M/D/YYYY (US style, matches Excel default export)
+  const slashParts = d.split('/');
+  if (slashParts.length === 3) {
+    if (slashParts[0].length === 4) {
+      // YYYY/M/D
+      return `${slashParts[0]}-${slashParts[1].padStart(2,'0')}-${slashParts[2].padStart(2,'0')}`;
+    } else {
+      // M/D/YYYY
+      const month = slashParts[0].padStart(2,'0');
+      const day   = slashParts[1].padStart(2,'0');
+      const year  = slashParts[2];
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  // Dash format with possible 1-2 digit parts: e.g. 6-14-2026
+  const dashParts = d.split('-');
+  if (dashParts.length === 3 && dashParts[0].length !== 4) {
+    const month = dashParts[0].padStart(2,'0');
+    const day   = dashParts[1].padStart(2,'0');
+    const year  = dashParts[2];
+    return `${year}-${month}-${day}`;
+  }
+
+  // Fallback: let JS Date try, output ISO date part
+  const parsed = new Date(d);
+  if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0,10);
+  return d; // give up, return as-is
+}
+
+function parseCSVText(text) {
+  return text.trim().split('\n').filter(l => l.trim()).map(line => {
+    const p = line.split(',').map(s => s.trim());
+    if (p[0].toLowerCase() === 'date') return null; // skip header row if present
+    return { date: normalizeDate(p[0]), main: p.slice(1,7).map(Number), extra: Number(p[7]) };
+  }).filter(Boolean);
+}
+
+function recordsToCSV() {
+  const header = 'date,n1,n2,n3,n4,n5,n6,extra';
+  const lines = records.map(r => `${r.date},${r.main.join(',')},${r.extra}`);
+  return [header, ...lines].join('\n');
+}
+
+function sortRecords() {
+  // Chronological order, latest first. YYYY-MM-DD strings sort correctly lexicographically.
+  records.sort((a,b) => b.date.localeCompare(a.date));
+}
+
+// ── Persistence ──────────────────────────────────────────────────
+async function loadData() {
+  const badge = document.getElementById('storage-badge');
+  try {
+    const result = await storageGet(STORAGE_KEY);
+    if (result && result.value) {
+      records = JSON.parse(result.value);
+      badge.textContent = `✅ 已載入 ${records.length} 筆記錄`;
+    } else {
+      throw new Error('empty');
+    }
+  } catch (e) {
+    records = parseCSVText(SEED_DATA);
+    badge.textContent = `🆕 使用範例數據（${records.length} 筆）`;
+    await saveData();
+  }
+  sortRecords();
+  renderHistoryTable();
+}
+
+async function saveData() {
+  try {
+    await storageSet(STORAGE_KEY, JSON.stringify(records));
+    document.getElementById('storage-badge').textContent = `✅ 已儲存 ${records.length} 筆記錄`;
+  } catch (e) {
+    document.getElementById('storage-badge').textContent = `⚠️ 儲存失敗，請匯出備份`;
+  }
+}
+
+async function clearAllData() {
+  if (!confirm('確定要清除所有已儲存的記錄嗎？此操作無法復原（建議先匯出CSV備份）')) return;
+  records = [];
+  await saveData();
+  renderHistoryTable();
+  document.getElementById('output').style.display = 'none';
+}
+
+// ── Import / Export ──────────────────────────────────────────────
+function exportCSV() {
+  const csv = recordsToCSV();
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `marksix_history_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const imported = parseCSVText(e.target.result);
+      if (!imported.length) throw new Error('empty file');
+
+      const existingDates = new Map(records.map(r => [r.date, r]));
+      let added = 0, updated = 0;
+      imported.forEach(r => {
+        if (existingDates.has(r.date)) {
+          updated++;
+        } else {
+          added++;
+        }
+        existingDates.set(r.date, r); // overwrite if exists, add if new
+      });
+      records = Array.from(existingDates.values());
+      sortRecords();
+      await saveData();
+      renderHistoryTable();
+      const msg = document.getElementById('storage-msg');
+      msg.textContent = `✅ 匯入完成：新增 ${added} 筆，更新 ${updated} 筆`;
+      msg.style.display = 'block';
+      setTimeout(() => { msg.style.display = 'none'; }, 4000);
+      autoCheckItem('csv');
+
+      // Auto-generate using the latest record right after import
+      generateFromLatest();
+    } catch (err) {
+      alert('匯入失敗，請檢查CSV格式是否正確（date,n1,n2,n3,n4,n5,n6,extra）');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── History table render ────────────────────────────────────────
+function renderHistoryTable() {
+  const tbody = document.getElementById('history-tbody');
+  tbody.innerHTML = '';
+  records.slice(0, 100).forEach((r, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.date}</td>
+      <td>${r.main.join(', ')}</td>
+      <td style="color:#f5c842;">${r.extra}</td>
+      <td><button class="btn-small btn-danger" onclick="deleteRecord('${r.date}')">刪除</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('history-badge').textContent = `共 ${records.length} 筆`;
+}
+
+async function deleteRecord(date) {
+  records = records.filter(r => r.date !== date);
+  await saveData();
+  renderHistoryTable();
+}
+
+// ── Copy helper ──────────────────────────────────────────────────
+function copyText(id, btn) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅';
+    setTimeout(() => { btn.textContent = orig; }, 1200);
+    if (id === 'gemini-prompt') autoCheckItem('image');
+    if (id === 'ig-caption') autoCheckItem('caption');
+  });
+}
+
+// ── Ball chip render ─────────────────────────────────────────────
+function ballChip(n) {
+  const bg = COLOR_BG[BALL_COLOR[n]];
+  return `<div class="chip" style="background:${bg};">${n}</div>`;
+}
+
+// ── Main process ─────────────────────────────────────────────────
+// ── Quick copy + open helpers (no API, no keys, just clipboard + new tab) ──
+function copyAndOpen(textareaId, url, btn) {
+  const text = document.getElementById(textareaId).value;
+  if (!text) { alert('請先按「產生本期所有素材」'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    window.open(url, '_blank');
+    const orig = btn.textContent;
+    btn.classList.add('copied');
+    btn.textContent = '✅ 已複製';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = orig; }, 2000);
+    if (textareaId === 'ai-prompt') autoCheckItem('ai');
+  });
+}
+
+function copyAndOpenAll() {
+  const text = document.getElementById('ai-prompt').value;
+  if (!text) { alert('請先按「產生本期所有素材」'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    ['https://grok.com','https://gemini.google.com','https://chat.deepseek.com','https://copilot.microsoft.com']
+      .forEach(url => window.open(url, '_blank'));
+    autoCheckItem('ai');
+  });
+}
+
+function generateFromLatest() {
+  const errEl = document.getElementById('input-error');
+
+  if (!records.length) {
+    errEl.textContent = '尚未有任何記錄，請先匯入CSV';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  // records is kept sorted descending by date, so index 0 is the latest
+  const latest = records[0];
+  const { date, main, extra } = latest;
+
+  // Stats from latest 50 (the latest record is already included since it's records[0])
+  const last50 = records.slice(0, 50);
+  const freq = {};
+  for (let n=1;n<=49;n++) freq[n]=0;
+  last50.forEach(r => { [...r.main, r.extra].forEach(n => freq[n]++); });
+
+  const sorted = Object.entries(freq).map(([n,c])=>({n:Number(n),c})).sort((a,b)=>b.c-a.c);
+  const hot = sorted.slice(0,6);
+  const cold = [...sorted].sort((a,b)=>a.c-b.c).slice(0,6);
+
+  document.getElementById('record-count-badge').textContent = `基於最近 ${last50.length} 期（最新：${date}）`;
+
+  document.getElementById('hot-balls').innerHTML = hot.map(x =>
+    `<div class="chip-wrap">${ballChip(x.n)}<div class="chip-cnt">${x.c}次</div></div>`
+  ).join('');
+  document.getElementById('cold-balls').innerHTML = cold.map(x =>
+    `<div class="chip-wrap">${ballChip(x.n)}<div class="chip-cnt">${x.c}次</div></div>`
+  ).join('');
+
+  const hotStr = hot.map(x=>`${x.n}號(${COLOR_ZH[BALL_COLOR[x.n]]},${x.c}次)`).join('、');
+  const coldStr = cold.map(x=>`${x.n}號(${COLOR_ZH[BALL_COLOR[x.n]]},${x.c}次)`).join('、');
+  const resultStr = `${main.join(', ')} + 特別號${extra}`;
+
+  // ── Next draw info (user-entered, persists in the input fields) ──
+  const nextDrawNo = document.getElementById('next-draw-no').value.trim() || '[]';
+  const nextDrawDateRaw = document.getElementById('next-draw-date').value; // YYYY-MM-DD or ''
+  let nextDrawYear = '[]', nextDrawMonth = '[]', nextDrawDay = '[]';
+  if (nextDrawDateRaw) {
+    const [y, m, d] = nextDrawDateRaw.split('-');
+    nextDrawYear = y; nextDrawMonth = String(parseInt(m)); nextDrawDay = String(parseInt(d));
+  }
+  const nextDrawPrizeRaw = document.getElementById('next-draw-prize').value.trim();
+  const nextDrawPrize = nextDrawPrizeRaw || '[]';
+
+  // ── AI predictions (user-pasted after visiting each model) ──
+  const predDeepseek = document.getElementById('pred-deepseek').value.trim() || '[]';
+  const predCopilot  = document.getElementById('pred-copilot').value.trim()  || '[]';
+  const predGrok     = document.getElementById('pred-grok').value.trim()     || '[]';
+  const predGemini   = document.getElementById('pred-gemini').value.trim()   || '[]';
+
+  document.getElementById('ai-prompt').value =
+`你是一個行內最專業的數據分析師及玄學家，非常擅長預測六合彩。你上次沒有中頭獎，今次你要用數據分析以及最準確的風水或玄學方式幫我預測下期六合彩的號碼，一定一定一定要中頭獎。預測號碼要以x-x-x-x-x-x的格式導出。`;
+
+  document.getElementById('gemini-prompt').value =
+`幫我更新[馬會六合彩最新數據&AI分析]圖中的資料，並生成圖片:
+1. 下一期期數: ${nextDrawNo}
+2.1左邊3*2的熱門號碼中，更新號碼球：${hotStr} ，並把所有熱門號碼按次數由多至少重新排列
+2.2右邊3*2的冷門號碼中，更新號碼球：${coldStr} ，並把所有冷門號碼按次數由少至多重新排列
+3.1 AI智能預測中的Copilot預測改成${predCopilot}
+3.2 AI智能預測中的Grok預測改成${predGrok}
+3.3 AI智能預測中的Deepseek預測改成${predDeepseek}
+3.4 AI智能預測中的Gemini預測改成${predGemini}
+4 下一期估計頭獎: HKD${nextDrawPrize}
+5 攪珠時間:${nextDrawYear}年${nextDrawMonth}月${nextDrawDay}日21:30
+請保持原有版面設計風格，只更新號碼及統計數字部分，球的顏色需根據六合彩官方顏色分布（1-49號對應紅/藍/綠）。`;
+
+  document.getElementById('ig-caption').value =
+`🤖 【AI 演算 x 大數據】今期六合彩預測 🚀
+
+又到財富分配既時間！💰 我地利用 AI 模型（Grok, Copilot, Deepseek, Gemini）深度分析近期既攪珠趨勢。呢個唔只係運氣，而係數據既對決！
+
+📊 近${last50.length}期數據分析
+🔥 熱門號碼： ${hot.map(x=>x.n).join('、')}
+❄️ 冷門號碼： ${cold.map(x=>x.n).join('、')}
+
+AI 戰隊： 四大AI 模型獨家心水組合，邊個先係真正既預言家？
+
+📅 下期攪珠詳情：
+期數： ${nextDrawNo}
+時間： ${nextDrawYear}年${nextDrawMonth}月${nextDrawDay}日 9:30pm
+估計頭獎： HKD${nextDrawPrize} 💰
+
+💬 大家覺得邊個 AI 最準？或者有冇自己既心水號碼？可以喺下面留言話比我地知！👇
+
+✅ 分享比你想一齊發財嘅朋友！
+
+#六合彩 #MarkSix #HKJC #AI預測 #大數據
+
+⚠️ 小提醒：以上數據及 AI 預測僅供參考及研究用途。博彩要有節制，未滿十八歲人士不得投注。`;
+
+  document.getElementById('output').style.display = 'block';
+  autoCheckItem('stats');
+}
+
+['next-draw-no','next-draw-date','next-draw-prize'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', () => saveNextDrawInfo());
+});
+['pred-deepseek','pred-copilot','pred-grok','pred-gemini'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', () => savePredictions());
+});
+loadNextDrawInfo();
+loadPredictions();
+loadChecklist();
+loadData().then(() => {
+  if (records.length) generateFromLatest();
+});
+</script>
+</body>
+</html>
